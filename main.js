@@ -308,6 +308,141 @@ function create3DText() {
   // Empty function - no text needed
 }
 
+
+// Create ferris wheel with billboard in center
+function createBillboard() {
+  const ferrisGroup = new THREE.Group();
+
+  // --- STRUCTURE ---
+const poleGeometry = new THREE.CylinderGeometry(0.4, 0.4, 20, 16); // Tapered legs
+const poleMaterial = new THREE.MeshStandardMaterial({
+  color: 0xff00ff, // Magenta to match the wheel
+  metalness: 0.5,
+  roughness: 0.2,
+  emissive: 0xff00ff,
+  emissiveIntensity: 0.3
+});
+
+const leftPole = new THREE.Mesh(poleGeometry, poleMaterial);
+leftPole.position.set(-9, 10, 0);
+const rightPole = leftPole.clone();
+rightPole.position.x = 9;
+ferrisGroup.add(leftPole, rightPole);
+
+  // --- FERRIS WHEEL RIMS ---
+  const outerRimGeo = new THREE.TorusGeometry(9, 0.4, 24, 100);
+  const outerRimMat = new THREE.MeshStandardMaterial({
+    color: 0xff00ff,
+    emissive: 0xff00ff,
+    emissiveIntensity: 1.2,
+    metalness: 1.0,
+    roughness: 0.2
+  });
+  const outerRim = new THREE.Mesh(outerRimGeo, outerRimMat);
+  outerRim.position.set(0, 18, 0);
+  ferrisGroup.add(outerRim);
+
+  const innerRimGeo = new THREE.TorusGeometry(6.5, 0.15, 12, 64);
+  const innerRimMat = new THREE.MeshStandardMaterial({
+    color: 0x00ffff,
+    emissive: 0x00ffff,
+    emissiveIntensity: 0.8
+  });
+  const innerRim = new THREE.Mesh(innerRimGeo, innerRimMat);
+  innerRim.position.set(0, 18, 0);
+  ferrisGroup.add(innerRim);
+
+  // --- SPOKES ---
+  const spokeGeometry = new THREE.CylinderGeometry(0.1, 0.1, 9, 8);
+  const spokeMaterial = new THREE.MeshStandardMaterial({
+    color: 0xb68cff,
+    metalness: 0.9,
+    roughness: 0.3
+  });
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2;
+    const spoke = new THREE.Mesh(spokeGeometry, spokeMaterial);
+    spoke.position.set(0, 18, 0);
+    spoke.rotation.z = angle;
+    ferrisGroup.add(spoke);
+  }
+
+  // --- CABINS ---
+  const cabins = [];
+  const cabinCount = 12;
+  for (let i = 0; i < cabinCount; i++) {
+    const angle = (i / cabinCount) * Math.PI * 2;
+    const x = Math.cos(angle) * 9;
+    const y = Math.sin(angle) * 9;
+    const cabinGeo = new THREE.SphereGeometry(0.7, 16, 16);
+    const cabinMat = new THREE.MeshStandardMaterial({
+      color: i % 2 === 0 ? 0xff69b4 : 0x69b4ff,
+      emissive: i % 2 === 0 ? 0xff1493 : 0x1493ff,
+      emissiveIntensity: 1.5,
+      metalness: 0.8,
+      roughness: 0.2
+    });
+    const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+    cabin.position.set(x, 18 + y, 0);
+    ferrisGroup.add(cabin);
+    cabins.push(cabin);
+  }
+
+  // --- HUB ---
+  const hubGeo = new THREE.CylinderGeometry(1.8, 1.8, 1, 32);
+  const hubMat = new THREE.MeshStandardMaterial({
+    color: 0x2d1b3d,
+    emissive: 0xff00ff,
+    emissiveIntensity: 0.7,
+    metalness: 0.9,
+    roughness: 0.2
+  });
+  const hub = new THREE.Mesh(hubGeo, hubMat);
+  hub.rotation.x = Math.PI / 2;
+  hub.position.set(0, 18, 0);
+  ferrisGroup.add(hub);
+
+  // --- BILLBOARD (ONLINE GITHUB LOGO) ---
+  const textureLoader = new THREE.TextureLoader();
+  const githubLogo = textureLoader.load(
+    "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/github.svg"
+  );
+  const billboardGeo = new THREE.CircleGeometry(6.8, 64);
+  const billboardMat = new THREE.MeshStandardMaterial({
+    map: githubLogo,
+    emissive: 0xffffff,
+    emissiveIntensity: 0.4,
+    metalness: 0.4,
+    roughness: 0.6,
+    side: THREE.DoubleSide,
+    transparent: true
+  });
+  const billboard = new THREE.Mesh(billboardGeo, billboardMat);
+  billboard.position.set(0, 18, 0.1);
+  ferrisGroup.add(billboard);
+
+  // --- POSITION + ANIMATION ---
+  ferrisGroup.scale.set(1, 1, 1); // Make it bigger
+ferrisGroup.position.set(0, 8, -10); // Raise it higher
+scene.add(ferrisGroup);
+
+  ferrisGroup.userData.animate = () => {
+    outerRim.rotation.z += 0.002;
+    innerRim.rotation.z -= 0.002;
+    
+    cabins.forEach((cabin, i) => {
+    const angle = (i / cabinCount) * Math.PI * 2 + outerRim.rotation.z;
+    const x = Math.cos(angle) * 9;
+    const y = Math.sin(angle) * 9;
+    cabin.position.set(x, 18 + y, 0);
+    // Keep cabins upright by counter-rotating
+    cabin.rotation.z = -outerRim.rotation.z;
+    });
+  };
+}
+
+
+
 // Add environment
 function createEnvironment() {
   const particleGeometry = new THREE.BufferGeometry();
@@ -345,6 +480,15 @@ function animate() {
     if (child instanceof THREE.Points) {
       child.rotation.y = time * 0.1;
     }
+
+    if (child.userData.animate) {
+      child.userData.animate();
+    }
+
+    // Animate ferris wheel
+  if (child.userData.animate) {
+    child.userData.animate();
+  }
   });
   
   renderer.render(scene, camera);
@@ -361,4 +505,5 @@ window.addEventListener('resize', () => {
 const contributionData = generateContributionData();
 createSkyline(contributionData);
 create3DText();
+createBillboard();
 animate();
