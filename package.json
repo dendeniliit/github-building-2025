@@ -1,0 +1,17 @@
+{
+  "name": "github-skyline",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+  "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "three": "^0.181.1",
+    "vite": "^7.2.2"
+  }
+}
