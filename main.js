@@ -308,7 +308,7 @@ function create3DText() {
   // Empty function - no text needed
 }
 
-// Create big billboard with GitHub logo and username
+
 // Create ferris wheel with billboard in center
 function createBillboard() {
   const ferrisGroup = new THREE.Group();
@@ -422,75 +422,7 @@ function createBillboard() {
   context.lineWidth = 15;
   context.strokeRect(10, 10, 1004, 1004);
   
-  // GitHub logo - clean white circle with cat silhouette
-  const centerX = 300;
-  const centerY = 512;
-  const radius = 120;
-  
-  // White circle background
-  context.beginPath();
-  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
-  context.fillStyle = '#ffffff';
-  context.fill();
-  
-  // Draw GitHub Octocat icon - simplified official style
-  context.fillStyle = '#24292e'; // GitHub dark color
-  
-  // Scale factor for the icon
-  const scale = radius / 8;
-  
-  // Octocat head
-  context.beginPath();
-  context.arc(centerX, centerY - scale * 0.5, scale * 4.5, 0, Math.PI * 2);
-  context.fill();
-  
-  // Left ear
-  context.beginPath();
-  context.moveTo(centerX - scale * 3.5, centerY - scale * 4);
-  context.lineTo(centerX - scale * 4.5, centerY - scale * 6);
-  context.lineTo(centerX - scale * 2.5, centerY - scale * 4.5);
-  context.closePath();
-  context.fill();
-  
-  // Right ear
-  context.beginPath();
-  context.moveTo(centerX + scale * 3.5, centerY - scale * 4);
-  context.lineTo(centerX + scale * 4.5, centerY - scale * 6);
-  context.lineTo(centerX + scale * 2.5, centerY - scale * 4.5);
-  context.closePath();
-  context.fill();
-  
-  // Body/bottom part
-  context.beginPath();
-  context.arc(centerX, centerY + scale * 2, scale * 3.5, Math.PI, 0, true);
-  context.lineTo(centerX + scale * 3.5, centerY + scale * 4);
-  context.quadraticCurveTo(centerX + scale * 2, centerY + scale * 5, centerX, centerY + scale * 4.5);
-  context.quadraticCurveTo(centerX - scale * 2, centerY + scale * 5, centerX - scale * 3.5, centerY + scale * 4);
-  context.closePath();
-  context.fill();
-  
-  // Left arm
-  context.beginPath();
-  context.ellipse(centerX - scale * 4.5, centerY + scale * 1, scale * 1.8, scale * 2.5, -0.5, 0, Math.PI * 2);
-  context.fill();
-  
-  // Right arm
-  context.beginPath();
-  context.ellipse(centerX + scale * 4.5, centerY + scale * 1, scale * 1.8, scale * 2.5, 0.5, 0, Math.PI * 2);
-  context.fill();
-  
-  // Username - large white text, clean style
-  context.fillStyle = '#ffffff';
-  context.font = 'bold 140px Arial, sans-serif';
-  context.textAlign = 'left';
-  context.textBaseline = 'middle';
-  
-  // Simple shadow for depth
-  context.shadowColor = 'rgba(0, 0, 0, 0.3)';
-  context.shadowBlur = 8;
-  context.shadowOffsetX = 4;
-  context.shadowOffsetY = 4;
-  
+ 
   
  
   
