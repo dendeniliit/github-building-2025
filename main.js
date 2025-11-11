@@ -49,6 +49,40 @@ controls.minDistance = 30;
 controls.maxDistance = 120;
 controls.maxPolarAngle = Math.PI / 2.1;
 
+
+const loader = new FontLoader();
+loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+  const textGeometry = new TextGeometry('dendeniliit', {
+    font: font,
+    size: 5,
+    height: 0.8,
+    curveSegments: 12,
+    bevelEnabled: true,
+    bevelThickness: 0.3,
+    bevelSize: 0.2,
+    bevelSegments: 5
+  });
+
+  const textMaterial = new THREE.MeshStandardMaterial({ color: 0xff66cc });
+  const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+  // Center the text
+  textGeometry.computeBoundingBox();
+  const bbox = textGeometry.boundingBox;
+  
+  textMesh.position.set(
+    -0.5 * (bbox.max.x - bbox.min.x), // Center X
+    1, // Lower Y position (was 10)
+    20 // Move closer (was 10)
+  );
+  
+  textMesh.rotation.x = -Math.PI * 0.15; // Slight tilt for better view
+  textMesh.castShadow = true;
+
+  scene.add(textMesh);
+});
+
+
 // Generate realistic contribution data
 function generateContributionData() {
   const data = [];
