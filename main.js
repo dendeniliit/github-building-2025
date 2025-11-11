@@ -4,8 +4,8 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 // Configuration
-const USERNAME = 'dendenilit';
-const YEAR = 2025;
+const USERNAME = 'dendeniliit';
+
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -50,37 +50,7 @@ controls.maxDistance = 120;
 controls.maxPolarAngle = Math.PI / 2.1;
 
 
-const loader = new FontLoader();
-loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
-  const textGeometry = new TextGeometry('dendeniliit', {
-    font: font,
-    size: 5,
-    height: 0.8,
-    curveSegments: 12,
-    bevelEnabled: true,
-    bevelThickness: 0.3,
-    bevelSize: 0.2,
-    bevelSegments: 5
-  });
 
-  const textMaterial = new THREE.MeshStandardMaterial({ color: 0xff66cc });
-  const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-
-  // Center the text
-  textGeometry.computeBoundingBox();
-  const bbox = textGeometry.boundingBox;
-  
-  textMesh.position.set(
-    -0.5 * (bbox.max.x - bbox.min.x), // Center X
-    1, // Lower Y position (was 10)
-    20 // Move closer (was 10)
-  );
-  
-  textMesh.rotation.x = -Math.PI * 0.15; // Slight tilt for better view
-  textMesh.castShadow = true;
-
-  scene.add(textMesh);
-});
 
 
 // Generate realistic contribution data
@@ -342,8 +312,32 @@ function create3DText() {
   // Empty function - no text needed
 }
 
+function createUsernameLabel() {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.width = 1024;
+  canvas.height = 256;
 
+  // Style the text
+  context.fillStyle = '#ff66cc';
+  context.font = 'bold 200px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(USERNAME, canvas.width / 2, canvas.height / 2);
 
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.MeshBasicMaterial({ 
+    map: texture, 
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  const geometry = new THREE.PlaneGeometry(20, 5);
+  const label = new THREE.Mesh(geometry, material);
+
+  label.position.set(0, 3, 25); // Position it in front of the stage
+  label.rotation.x = -0.3; // Tilt it slightly down for better visibility
+  scene.add(label);
+}
 
 // Create ferris wheel with billboard in center
 function createBillboard() {
@@ -542,4 +536,5 @@ const contributionData = generateContributionData();
 createSkyline(contributionData);
 create3DText();
 createBillboard();
+createUsernameLabel();
 animate();
