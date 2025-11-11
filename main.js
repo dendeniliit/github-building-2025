@@ -291,9 +291,9 @@ function createStage() {
     
     const lightGeometry = new THREE.SphereGeometry(0.8, 16, 16);
     const lightMaterial = new THREE.MeshStandardMaterial({
-      color: i % 2 === 0 ? 0xff00ff : 0x00ffff,
+      color: i % 2 === 0 ? 0xff00ff : 0xff6600,
       emissive: i % 2 === 0 ? 0xff00ff : 0x00ffff,
-      emissiveIntensity: 2
+      emissiveIntensity: 0.6
     });
     const light = new THREE.Mesh(lightGeometry, lightMaterial);
     light.position.set(x, 2, z);
@@ -307,6 +307,8 @@ function createStage() {
 function create3DText() {
   // Empty function - no text needed
 }
+
+
 
 
 // Create ferris wheel with billboard in center
