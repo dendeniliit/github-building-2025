@@ -76,7 +76,7 @@ function generateContributionData() {
 
 // Color palette - pastel pink/blue
 const buildingColors = [
-  { base: 0x1a0d2e, emissive: 0x2d1b3d },
+  { base: 0x6a4c93, emissive: 0x9b72cf },
   { base: 0xffb3d9, emissive: 0xff69b4 },
   { base: 0xb3d9ff, emissive: 0x69b4ff },
   { base: 0xff99cc, emissive: 0xff1493 },
@@ -126,7 +126,7 @@ building.position.y = stageHeight;
 
    // Add windows - for all buildings to avoid black gaps
     if (contrib.level >= 1) {
-      const windowCount = Math.floor(height / 1.2); // More windows, closer spacing
+      const windowCount = Math.floor(height / 1.2);
       for (let i = 0; i < windowCount; i++) {
         const windowGeo = new THREE.BoxGeometry(0.25, 0.25, 0.05);
         const windowMat = new THREE.MeshStandardMaterial({
@@ -138,11 +138,26 @@ building.position.y = stageHeight;
         const stageHeight = 2;
         const window1 = new THREE.Mesh(windowGeo, windowMat);
         window1.position.set(x + 0.25, stageHeight + i * 1.2 + 0.8, z + buildingSize / 2 + 0.03);
+        
+        // Store target position and animate with building
+        window1.userData.targetY = stageHeight + i * 1.2 + 0.8;
+        window1.userData.building = building; // Link to parent building
+        window1.scale.set(1, 0.01, 1);
+        window1.position.y = stageHeight;
+        
         scene.add(window1);
+        animateBuilding(window1, index * 2); // Same animation timing as building
 
         const window2 = new THREE.Mesh(windowGeo, windowMat);
         window2.position.set(x - 0.25, stageHeight + i * 1.2 + 0.8, z + buildingSize / 2 + 0.03);
+        
+        window2.userData.targetY = stageHeight + i * 1.2 + 0.8;
+        window2.userData.building = building;
+        window2.scale.set(1, 0.01, 1);
+        window2.position.y = stageHeight;
+        
         scene.add(window2);
+        animateBuilding(window2, index * 2);
       }
     }
 
