@@ -200,7 +200,7 @@ function animateBuilding(building, delay) {
 }
 
 
-// Replace the createBase() function with this:
+// createBase() function 
 function createBase() {
   const baseGeometry = new THREE.CylinderGeometry(75, 80, 2, 64);
   const baseMaterial = new THREE.MeshStandardMaterial({
@@ -412,7 +412,6 @@ function createBase() {
 }
 
 // Create stage platform with name
-// Create stage platform with name
 function createStage() {
   const stageGroup = new THREE.Group();
   
@@ -472,15 +471,31 @@ function create3DText() {
 function createUsernameLabel() {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  canvas.width = 1024;
-  canvas.height = 256;
+  canvas.width = 2024;
+  canvas.height = 300;
 
   // Style the text
   context.fillStyle = '#ff66cc';
-  context.font = 'bold 200px Arial';
+  context.font = 'bold 400px Arial';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillText(USERNAME, canvas.width / 2, canvas.height / 2);
+
+  context.shadowColor = '#8d2157ff';
+context.shadowBlur = 20;
+context.shadowOffsetX = 0;
+context.shadowOffsetY = 7;
+
+context.lineWidth = 10;
+context.strokeStyle = '#ffffff';
+context.strokeText(USERNAME, canvas.width / 2, canvas.height / 2);
+
+const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+gradient.addColorStop(0, '#ff99cc');
+gradient.addColorStop(0.5, '#ff66cc');
+gradient.addColorStop(1, '#cc33aa');
+context.fillStyle = gradient;
+context.fillText(USERNAME, canvas.width / 2, canvas.height / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   const material = new THREE.MeshBasicMaterial({ 
@@ -491,7 +506,7 @@ function createUsernameLabel() {
   const geometry = new THREE.PlaneGeometry(20, 5);
   const label = new THREE.Mesh(geometry, material);
 
-  label.position.set(0, 3, 25); // Position it in front of the stage
+  label.position.set(0, 4.5, 25); // Position it in front of the stage
   label.rotation.x = -0.3; // Tilt it slightly down for better visibility
   scene.add(label);
 }
