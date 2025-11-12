@@ -1,18 +1,34 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
-// Configuration
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
 const USERNAME = 'dendeniliit';
 
+const buildingColors = [
+  { base: 0x6a4c93, emissive: 0x9b72cf },
+  { base: 0xffb3d9, emissive: 0xff69b4 },
+  { base: 0xb3d9ff, emissive: 0x69b4ff },
+  { base: 0xff99cc, emissive: 0xff1493 },
+  { base: 0x99ccff, emissive: 0x1493ff }
+];
 
-// Scene setup
+// ============================================================================
+// SCENE SETUP
+// ============================================================================
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0520);
 scene.fog = new THREE.Fog(0x0a0520, 60, 150);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(
+  50,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 camera.position.set(60, 35, 60);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -22,7 +38,10 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-// Lighting
+// ============================================================================
+// LIGHTING
+// ============================================================================
+
 const ambientLight = new THREE.AmbientLight(0xff00ff, 0.5);
 scene.add(ambientLight);
 
@@ -39,7 +58,10 @@ const backLight = new THREE.PointLight(0xff00ff, 2, 150);
 backLight.position.set(0, 40, -50);
 scene.add(backLight);
 
-// Controls
+// ============================================================================
+// CONTROLS
+// ============================================================================
+
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -49,11 +71,10 @@ controls.minDistance = 30;
 controls.maxDistance = 120;
 controls.maxPolarAngle = Math.PI / 2.1;
 
+// ============================================================================
+// DATA GENERATION
+// ============================================================================
 
-
-
-
-// Generate realistic contribution data
 function generateContributionData() {
   const data = [];
 
@@ -78,22 +99,44 @@ function generateContributionData() {
   return data;
 }
 
-// Color palette - pastel pink/blue
-const buildingColors = [
-  { base: 0x6a4c93, emissive: 0x9b72cf },
-  { base: 0xffb3d9, emissive: 0xff69b4 },
-  { base: 0xb3d9ff, emissive: 0x69b4ff },
-  { base: 0xff99cc, emissive: 0xff1493 },
-  { base: 0x99ccff, emissive: 0x1493ff }
-];
+// ============================================================================
+// BUILDING ANIMATION
+// ============================================================================
 
+function animateBuilding(building, delay) {
+  const targetY = building.userData.targetY;
+  let progress = 0;
 
-// Create city skyline
+  const animate = () => {
+    if (progress < delay) {
+      progress += 16;
+      requestAnimationFrame(animate);
+      return;
+    }
+
+    if (building.scale.y < 1) {
+      building.scale.y += 0.08;
+      building.position.y = targetY * building.scale.y;
+      requestAnimationFrame(animate);
+    } else {
+      building.scale.y = 1;
+      building.position.y = targetY;
+    }
+  };
+  
+  animate();
+}
+
+// ============================================================================
+// SKYLINE CREATION
+// ============================================================================
+
 function createSkyline(data) {
   const weeksPerYear = 53;
   const daysPerWeek = 7;
   const buildingSize = 1.2;
   const spacing = 0.4;
+  const stageHeight = 2;
 
   data.forEach((contrib, index) => {
     const week = Math.floor(index / daysPerWeek);
@@ -121,14 +164,13 @@ function createSkyline(data) {
     const x = (week - weeksPerYear / 2) * (buildingSize + spacing) + 1;
     const z = (day - daysPerWeek / 2) * (buildingSize + spacing);
     
-  const stageHeight = 2; // Buildings sit on top of stage
-building.position.set(x, stageHeight + height / 2, z);
-building.userData.targetY = stageHeight + height / 2;
-building.scale.set(1, 0.01, 1);
-building.position.y = stageHeight;
+    building.position.set(x, stageHeight + height / 2, z);
+    building.userData.targetY = stageHeight + height / 2;
+    building.scale.set(1, 0.01, 1);
+    building.position.y = stageHeight;
     scene.add(building);
 
-   // Add windows - for all buildings to avoid black gaps
+    // Add windows
     if (contrib.level >= 1) {
       const windowCount = Math.floor(height / 1.2);
       for (let i = 0; i < windowCount; i++) {
@@ -139,33 +181,34 @@ building.position.y = stageHeight;
           emissiveIntensity: 0.8
         });
         
-        const stageHeight = 2;
         const window1 = new THREE.Mesh(windowGeo, windowMat);
-        window1.position.set(x + 0.25, stageHeight + i * 1.2 + 0.8, z + buildingSize / 2 + 0.03);
-        
-        // Store target position and animate with building
+        window1.position.set(
+          x + 0.25,
+          stageHeight + i * 1.2 + 0.8,
+          z + buildingSize / 2 + 0.03
+        );
         window1.userData.targetY = stageHeight + i * 1.2 + 0.8;
-        window1.userData.building = building; // Link to parent building
+        window1.userData.building = building;
         window1.scale.set(1, 0.01, 1);
         window1.position.y = stageHeight;
-        
         scene.add(window1);
-        animateBuilding(window1, index * 2); // Same animation timing as building
+        animateBuilding(window1, index * 2);
 
         const window2 = new THREE.Mesh(windowGeo, windowMat);
-        window2.position.set(x - 0.25, stageHeight + i * 1.2 + 0.8, z + buildingSize / 2 + 0.03);
-        
+        window2.position.set(
+          x - 0.25,
+          stageHeight + i * 1.2 + 0.8,
+          z + buildingSize / 2 + 0.03
+        );
         window2.userData.targetY = stageHeight + i * 1.2 + 0.8;
         window2.userData.building = building;
         window2.scale.set(1, 0.01, 1);
         window2.position.y = stageHeight;
-        
         scene.add(window2);
         animateBuilding(window2, index * 2);
       }
     }
 
-    // Animate
     animateBuilding(building, index * 2);
   });
 
@@ -174,34 +217,12 @@ building.position.y = stageHeight;
   createEnvironment();
 }
 
-// Smooth spring animation
-function animateBuilding(building, delay) {
-  const targetY = building.userData.targetY;
-  let progress = 0;
+// ============================================================================
+// BASE PLATFORM
+// ============================================================================
 
-  const animate = () => {
-    if (progress < delay) {
-      progress += 16;
-      requestAnimationFrame(animate);
-      return;
-    }
-
-    if (building.scale.y < 1) {
-      building.scale.y += 0.08;
-      building.position.y = targetY * building.scale.y;
-      requestAnimationFrame(animate);
-    } else {
-      building.scale.y = 1;
-      building.position.y = targetY;
-    }
-  };
-  
-  animate();
-}
-
-
-// createBase() function 
 function createBase() {
+  // Main base cylinder
   const baseGeometry = new THREE.CylinderGeometry(75, 80, 2, 64);
   const baseMaterial = new THREE.MeshStandardMaterial({
     color: 0x0d0520,
@@ -216,7 +237,7 @@ function createBase() {
   base.receiveShadow = true;
   scene.add(base);
 
-  // Outer base rim glow (at y=0, radius 75)
+  // Outer base rim
   const outerBaseRimGeometry = new THREE.TorusGeometry(75, 0.8, 16, 100);
   const outerBaseRimMaterial = new THREE.MeshStandardMaterial({
     color: 0xff00ff,
@@ -229,7 +250,7 @@ function createBase() {
   scene.add(outerBaseRim);
   scene.userData.outerBaseRim = outerBaseRim;
 
-  // Electric arcs for outer base rim
+  // Electric arcs for outer base
   const outerArcCount = 8;
   const outerArcs = [];
   
@@ -252,129 +273,16 @@ function createBase() {
   
   scene.userData.outerBaseArcs = outerArcs;
 
-  // Outer base grid - CIRCULAR
-  const outerGridRadius = 75;
-  const outerGridDivisions = 50;
-  const outerElectricLines = [];
+  // Outer base grid
+  createCircularGrid(75, 50, 0, 0.2, 'outerElectricLines');
 
-  for (let i = -outerGridDivisions; i <= outerGridDivisions; i++) {
-    const step = (outerGridRadius * 2) / outerGridDivisions;
-    const pos = i * step;
-    
-    // Horizontal lines
-    const maxWidth = Math.sqrt(outerGridRadius * outerGridRadius - pos * pos);
-    if (!isNaN(maxWidth)) {
-      const points1 = [];
-      points1.push(new THREE.Vector3(-maxWidth, 0, pos));
-      points1.push(new THREE.Vector3(maxWidth, 0, pos));
-      const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
-      
-      const material1 = new THREE.LineBasicMaterial({ 
-        color: 0xff00ff, 
-        transparent: true, 
-        opacity: 0.2 
-      });
-      
-      const line1 = new THREE.Line(geometry1, material1);
-      scene.add(line1);
-      outerElectricLines.push({ line: line1, baseOpacity: 0.2, pulseOffset: Math.random() * Math.PI * 2 });
-    }
+  // Stage grid
+  createCircularGrid(45, 40, 2.1, 0.3, 'electricLines');
 
-    // Vertical lines
-    const maxHeight = Math.sqrt(outerGridRadius * outerGridRadius - pos * pos);
-    if (!isNaN(maxHeight)) {
-      const points2 = [];
-      points2.push(new THREE.Vector3(pos, 0, -maxHeight));
-      points2.push(new THREE.Vector3(pos, 0, maxHeight));
-      const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
-      
-      const material2 = new THREE.LineBasicMaterial({ 
-        color: 0x00ffff, 
-        transparent: true, 
-        opacity: 0.2 
-      });
-      
-      const line2 = new THREE.Line(geometry2, material2);
-      scene.add(line2);
-      outerElectricLines.push({ line: line2, baseOpacity: 0.2, pulseOffset: Math.random() * Math.PI * 2 });
-    }
-  }
-  
-  scene.userData.outerElectricLines = outerElectricLines;
+  // Circuit board nodes
+  createCircuitNodes();
 
-  // Animated grid with electricity effect - CIRCULAR (stage grid)
-  const stageRadius = 45;
-  const gridDivisions = 40;
-  const electricLines = [];
-  
-  for (let i = -gridDivisions; i <= gridDivisions; i++) {
-    const step = (stageRadius * 2) / gridDivisions;
-    const pos = i * step;
-    
-    const maxWidth = Math.sqrt(stageRadius * stageRadius - pos * pos);
-    if (!isNaN(maxWidth)) {
-      const points1 = [];
-      points1.push(new THREE.Vector3(-maxWidth, 2.1, pos));
-      points1.push(new THREE.Vector3(maxWidth, 2.1, pos));
-      const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
-      
-      const material1 = new THREE.LineBasicMaterial({ 
-        color: 0xff00ff, 
-        transparent: true, 
-        opacity: 0.3 
-      });
-      
-      const line1 = new THREE.Line(geometry1, material1);
-      scene.add(line1);
-      electricLines.push({ line: line1, baseOpacity: 0.3, pulseOffset: Math.random() * Math.PI * 2 });
-    }
-
-    const maxHeight = Math.sqrt(stageRadius * stageRadius - pos * pos);
-    if (!isNaN(maxHeight)) {
-      const points2 = [];
-      points2.push(new THREE.Vector3(pos, 2.1, -maxHeight));
-      points2.push(new THREE.Vector3(pos, 2.1, maxHeight));
-      const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
-      
-      const material2 = new THREE.LineBasicMaterial({ 
-        color: 0x00ffff, 
-        transparent: true, 
-        opacity: 0.3 
-      });
-      
-      const line2 = new THREE.Line(geometry2, material2);
-      scene.add(line2);
-      electricLines.push({ line: line2, baseOpacity: 0.3, pulseOffset: Math.random() * Math.PI * 2 });
-    }
-  }
-
-  scene.userData.electricLines = electricLines;
-
-  // Circuit board style nodes
-  const nodeGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-  const nodes = [];
-  
-  for (let i = 0; i < 50; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const radius = Math.random() * 43;
-    const x = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * radius;
-    
-    const nodeMaterial = new THREE.MeshStandardMaterial({
-      color: Math.random() > 0.5 ? 0xff00ff : 0x00ffff,
-      emissive: Math.random() > 0.5 ? 0xff00ff : 0x00ffff,
-      emissiveIntensity: 1
-    });
-    
-    const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
-    node.position.set(x, 2.2, z);
-    scene.add(node);
-    nodes.push({ mesh: node, pulseOffset: Math.random() * Math.PI * 2 });
-  }
-  
-  scene.userData.electricNodes = nodes;
-
-  // Outer rim glow - stage edge
+  // Stage edge rim
   const rimGeometry = new THREE.TorusGeometry(45, 0.8, 16, 100);
   const rimMaterial = new THREE.MeshStandardMaterial({
     color: 0xff00ff,
@@ -387,7 +295,7 @@ function createBase() {
   scene.add(rim);
   scene.userData.outerRim = rim;
 
-  // Electric arcs - stage edge
+  // Electric arcs for stage edge
   const arcCount = 8;
   const arcs = [];
   
@@ -411,12 +319,97 @@ function createBase() {
   scene.userData.electricArcs = arcs;
 }
 
-// Create stage platform with name
+function createCircularGrid(radius, divisions, yPos, opacity, storageKey) {
+  const electricLines = [];
+  
+  for (let i = -divisions; i <= divisions; i++) {
+    const step = (radius * 2) / divisions;
+    const pos = i * step;
+    
+    // Horizontal lines
+    const maxWidth = Math.sqrt(radius * radius - pos * pos);
+    if (!isNaN(maxWidth)) {
+      const points1 = [
+        new THREE.Vector3(-maxWidth, yPos, pos),
+        new THREE.Vector3(maxWidth, yPos, pos)
+      ];
+      const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
+      const material1 = new THREE.LineBasicMaterial({ 
+        color: 0xff00ff, 
+        transparent: true, 
+        opacity
+      });
+      
+      const line1 = new THREE.Line(geometry1, material1);
+      scene.add(line1);
+      electricLines.push({ 
+        line: line1, 
+        baseOpacity: opacity, 
+        pulseOffset: Math.random() * Math.PI * 2 
+      });
+    }
+
+    // Vertical lines
+    const maxHeight = Math.sqrt(radius * radius - pos * pos);
+    if (!isNaN(maxHeight)) {
+      const points2 = [
+        new THREE.Vector3(pos, yPos, -maxHeight),
+        new THREE.Vector3(pos, yPos, maxHeight)
+      ];
+      const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
+      const material2 = new THREE.LineBasicMaterial({ 
+        color: 0x00ffff, 
+        transparent: true, 
+        opacity
+      });
+      
+      const line2 = new THREE.Line(geometry2, material2);
+      scene.add(line2);
+      electricLines.push({ 
+        line: line2, 
+        baseOpacity: opacity, 
+        pulseOffset: Math.random() * Math.PI * 2 
+      });
+    }
+  }
+  
+  scene.userData[storageKey] = electricLines;
+}
+
+function createCircuitNodes() {
+  const nodeGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+  const nodes = [];
+  
+  for (let i = 0; i < 50; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.random() * 43;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    
+    const nodeMaterial = new THREE.MeshStandardMaterial({
+      color: Math.random() > 0.5 ? 0xff00ff : 0x00ffff,
+      emissive: Math.random() > 0.5 ? 0xff00ff : 0x00ffff,
+      emissiveIntensity: 1
+    });
+    
+    const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+    node.position.set(x, 2.2, z);
+    scene.add(node);
+    nodes.push({ mesh: node, pulseOffset: Math.random() * Math.PI * 2 });
+  }
+  
+  scene.userData.electricNodes = nodes;
+}
+
+// ============================================================================
+// STAGE PLATFORM
+// ============================================================================
+
 function createStage() {
   const stageGroup = new THREE.Group();
   
-  // Main stage platform - elevated
-  const platformGeometry = new THREE.CylinderGeometry(45, 47, 2, 64); // Reduced from 47, 49
+  // Main platform
+  const platformGeometry = new THREE.CylinderGeometry(45, 47, 2, 64);
   const platformMaterial = new THREE.MeshStandardMaterial({
     color: 0x2d1544,
     emissive: 0x5a2d88,
@@ -431,7 +424,7 @@ function createStage() {
   stageGroup.add(platform);
 
   // Glowing rim
-  const rimGeometry = new THREE.TorusGeometry(45, 0.8, 16, 100); // Reduced from 47
+  const rimGeometry = new THREE.TorusGeometry(45, 0.8, 16, 100);
   const rimMaterial = new THREE.MeshStandardMaterial({
     color: 0xff00ff,
     emissive: 0xff00ff,
@@ -442,12 +435,12 @@ function createStage() {
   rim.position.y = 2;
   stageGroup.add(rim);
 
-  // Stage lights around edge
+  // Stage lights
   const lightCount = 24;
   for (let i = 0; i < lightCount; i++) {
     const angle = (i / lightCount) * Math.PI * 2;
-    const x = Math.cos(angle) * 46; // Reduced from 48
-    const z = Math.sin(angle) * 46; // Reduced from 48
+    const x = Math.cos(angle) * 46;
+    const z = Math.sin(angle) * 46;
     
     const lightGeometry = new THREE.SphereGeometry(0.8, 16, 16);
     const lightMaterial = new THREE.MeshStandardMaterial({
@@ -463,10 +456,9 @@ function createStage() {
   scene.add(stageGroup);
 }
 
-// Create 3D text on stage
-function create3DText() {
-  // Empty function - no text needed
-}
+// ============================================================================
+// USERNAME LABEL
+// ============================================================================
 
 function createUsernameLabel() {
   const canvas = document.createElement('canvas');
@@ -474,28 +466,27 @@ function createUsernameLabel() {
   canvas.width = 2024;
   canvas.height = 300;
 
-  // Style the text
-  context.fillStyle = '#ff66cc';
+  // Shadow
+  context.shadowColor = '#8d2157ff';
+  context.shadowBlur = 20;
+  context.shadowOffsetX = 0;
+  context.shadowOffsetY = 7;
+
+  // Stroke
+  context.lineWidth = 10;
+  context.strokeStyle = '#ffffff';
   context.font = 'bold 400px Arial';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
+  context.strokeText(USERNAME, canvas.width / 2, canvas.height / 2);
+
+  // Gradient fill
+  const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, '#ff99cc');
+  gradient.addColorStop(0.5, '#ff66cc');
+  gradient.addColorStop(1, '#cc33aa');
+  context.fillStyle = gradient;
   context.fillText(USERNAME, canvas.width / 2, canvas.height / 2);
-
-  context.shadowColor = '#8d2157ff';
-context.shadowBlur = 20;
-context.shadowOffsetX = 0;
-context.shadowOffsetY = 7;
-
-context.lineWidth = 10;
-context.strokeStyle = '#ffffff';
-context.strokeText(USERNAME, canvas.width / 2, canvas.height / 2);
-
-const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
-gradient.addColorStop(0, '#ff99cc');
-gradient.addColorStop(0.5, '#ff66cc');
-gradient.addColorStop(1, '#cc33aa');
-context.fillStyle = gradient;
-context.fillText(USERNAME, canvas.width / 2, canvas.height / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   const material = new THREE.MeshBasicMaterial({ 
@@ -506,32 +497,35 @@ context.fillText(USERNAME, canvas.width / 2, canvas.height / 2);
   const geometry = new THREE.PlaneGeometry(20, 5);
   const label = new THREE.Mesh(geometry, material);
 
-  label.position.set(0, 4.5, 25); // Position it in front of the stage
-  label.rotation.x = -0.3; // Tilt it slightly down for better visibility
+  label.position.set(0, 4.5, 25);
+  label.rotation.x = -0.3;
   scene.add(label);
 }
 
-// Create ferris wheel with billboard in center
+// ============================================================================
+// FERRIS WHEEL / BILLBOARD
+// ============================================================================
+
 function createBillboard() {
   const ferrisGroup = new THREE.Group();
 
-  // --- STRUCTURE ---
-const poleGeometry = new THREE.CylinderGeometry(0.4, 0.4, 20, 16); // Tapered legs
-const poleMaterial = new THREE.MeshStandardMaterial({
-  color: 0xff00ff, // Magenta to match the wheel
-  metalness: 0.5,
-  roughness: 0.2,
-  emissive: 0xff00ff,
-  emissiveIntensity: 0.3
-});
+  // Support poles
+  const poleGeometry = new THREE.CylinderGeometry(0.4, 0.4, 20, 16);
+  const poleMaterial = new THREE.MeshStandardMaterial({
+    color: 0xff00ff,
+    metalness: 0.5,
+    roughness: 0.2,
+    emissive: 0xff00ff,
+    emissiveIntensity: 0.3
+  });
 
-const leftPole = new THREE.Mesh(poleGeometry, poleMaterial);
-leftPole.position.set(-9, 10, 0);
-const rightPole = leftPole.clone();
-rightPole.position.x = 9;
-ferrisGroup.add(leftPole, rightPole);
+  const leftPole = new THREE.Mesh(poleGeometry, poleMaterial);
+  leftPole.position.set(-9, 10, 0);
+  const rightPole = leftPole.clone();
+  rightPole.position.x = 9;
+  ferrisGroup.add(leftPole, rightPole);
 
-  // --- FERRIS WHEEL RIMS ---
+  // Outer rim
   const outerRimGeo = new THREE.TorusGeometry(9, 0.4, 24, 100);
   const outerRimMat = new THREE.MeshStandardMaterial({
     color: 0xff00ff,
@@ -544,6 +538,7 @@ ferrisGroup.add(leftPole, rightPole);
   outerRim.position.set(0, 18, 0);
   ferrisGroup.add(outerRim);
 
+  // Inner rim
   const innerRimGeo = new THREE.TorusGeometry(6.5, 0.15, 12, 64);
   const innerRimMat = new THREE.MeshStandardMaterial({
     color: 0x00ffff,
@@ -554,7 +549,7 @@ ferrisGroup.add(leftPole, rightPole);
   innerRim.position.set(0, 18, 0);
   ferrisGroup.add(innerRim);
 
-  // --- SPOKES ---
+  // Spokes
   const spokeGeometry = new THREE.CylinderGeometry(0.1, 0.1, 9, 8);
   const spokeMaterial = new THREE.MeshStandardMaterial({
     color: 0xb68cff,
@@ -569,7 +564,7 @@ ferrisGroup.add(leftPole, rightPole);
     ferrisGroup.add(spoke);
   }
 
-  // --- CABINS ---
+  // Cabins
   const cabins = [];
   const cabinCount = 12;
   for (let i = 0; i < cabinCount; i++) {
@@ -590,7 +585,7 @@ ferrisGroup.add(leftPole, rightPole);
     cabins.push(cabin);
   }
 
-  // --- HUB ---
+  // Hub
   const hubGeo = new THREE.CylinderGeometry(1.8, 1.8, 1, 32);
   const hubMat = new THREE.MeshStandardMaterial({
     color: 0x2d1b3d,
@@ -604,7 +599,7 @@ ferrisGroup.add(leftPole, rightPole);
   hub.position.set(0, 18, 0);
   ferrisGroup.add(hub);
 
-  // --- BILLBOARD (ONLINE GITHUB LOGO) ---
+  // GitHub billboard
   const textureLoader = new THREE.TextureLoader();
   const githubLogo = textureLoader.load(
     "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/github.svg"
@@ -623,29 +618,28 @@ ferrisGroup.add(leftPole, rightPole);
   billboard.position.set(0, 18, 0.1);
   ferrisGroup.add(billboard);
 
-  // --- POSITION + ANIMATION ---
-  ferrisGroup.scale.set(1, 1, 1); // Make it bigger
-ferrisGroup.position.set(0, 8, -10); // Raise it higher
-scene.add(ferrisGroup);
+  // Position and setup animation
+  ferrisGroup.position.set(0, 8, -10);
+  scene.add(ferrisGroup);
 
   ferrisGroup.userData.animate = () => {
     outerRim.rotation.z += 0.002;
     innerRim.rotation.z -= 0.002;
     
     cabins.forEach((cabin, i) => {
-    const angle = (i / cabinCount) * Math.PI * 2 + outerRim.rotation.z;
-    const x = Math.cos(angle) * 9;
-    const y = Math.sin(angle) * 9;
-    cabin.position.set(x, 18 + y, 0);
-    // Keep cabins upright by counter-rotating
-    cabin.rotation.z = -outerRim.rotation.z;
+      const angle = (i / cabinCount) * Math.PI * 2 + outerRim.rotation.z;
+      const x = Math.cos(angle) * 9;
+      const y = Math.sin(angle) * 9;
+      cabin.position.set(x, 18 + y, 0);
+      cabin.rotation.z = -outerRim.rotation.z;
     });
   };
 }
 
+// ============================================================================
+// ENVIRONMENT
+// ============================================================================
 
-
-// Add environment
 function createEnvironment() {
   const particleGeometry = new THREE.BufferGeometry();
   const particleCount = 500;
@@ -670,9 +664,11 @@ function createEnvironment() {
   scene.add(particles);
 }
 
-// Animation loop
-let time = 0;
+// ============================================================================
+// ANIMATION LOOP
+// ============================================================================
 
+let time = 0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -690,20 +686,21 @@ function animate() {
       }
     });
   }
-  // Animate outer base rim
-if (scene.userData.outerBaseRim) {
-  const rimPulse = Math.sin(time * 2) * 0.5 + 0.5;
-  scene.userData.outerBaseRim.material.emissiveIntensity = 0.8 + rimPulse * 0.7;
-}
 
-// Animate outer base arcs
-if (scene.userData.outerBaseArcs) {
-  scene.userData.outerBaseArcs.forEach((arc, i) => {
-    arc.rotation.z += 0.01;
-    const arcPulse = Math.sin(time * 5 + i) * 0.5 + 0.5;
-    arc.material.opacity = 0.3 + arcPulse * 0.5;
-  });
-}
+  // Animate outer base rim
+  if (scene.userData.outerBaseRim) {
+    const rimPulse = Math.sin(time * 2) * 0.5 + 0.5;
+    scene.userData.outerBaseRim.material.emissiveIntensity = 0.8 + rimPulse * 0.7;
+  }
+
+  // Animate outer base arcs
+  if (scene.userData.outerBaseArcs) {
+    scene.userData.outerBaseArcs.forEach((arc, i) => {
+      arc.rotation.z += 0.01;
+      const arcPulse = Math.sin(time * 5 + i) * 0.5 + 0.5;
+      arc.material.opacity = 0.3 + arcPulse * 0.5;
+    });
+  }
   
   // Animate stage grid
   if (scene.userData.electricLines) {
@@ -716,9 +713,7 @@ if (scene.userData.outerBaseArcs) {
     });
   }
 
-  
-  
-  
+  // Animate circuit nodes
   if (scene.userData.electricNodes) {
     scene.userData.electricNodes.forEach(node => {
       const pulse = Math.sin(time * 4 + node.pulseOffset) * 0.5 + 0.5;
@@ -727,11 +722,13 @@ if (scene.userData.outerBaseArcs) {
     });
   }
   
+  // Animate stage rim
   if (scene.userData.outerRim) {
     const rimPulse = Math.sin(time * 2) * 0.5 + 0.5;
     scene.userData.outerRim.material.emissiveIntensity = 0.8 + rimPulse * 0.7;
   }
   
+  // Animate stage arcs
   if (scene.userData.electricArcs) {
     scene.userData.electricArcs.forEach((arc, i) => {
       arc.rotation.z += 0.01;
@@ -740,6 +737,7 @@ if (scene.userData.outerBaseArcs) {
     });
   }
   
+  // Animate particles and custom animations
   scene.children.forEach(child => {
     if (child instanceof THREE.Points) {
       child.rotation.y = time * 0.1;
@@ -752,24 +750,22 @@ if (scene.userData.outerBaseArcs) {
   renderer.render(scene, camera);
 }
 
-// Handle resize
+// ============================================================================
+// EVENT LISTENERS
+// ============================================================================
+
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Handle resize
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
-// Initialize
 const contributionData = generateContributionData();
 createSkyline(contributionData);
-create3DText();
 createBillboard();
 createUsernameLabel();
 animate();
